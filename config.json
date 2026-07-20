@@ -1,0 +1,9 @@
+{
+  "header_text": "سیستم نوبت‌دهی",
+  "printer_name": "Meva TP1000",
+  "start_number": 1,
+  "end_number": 999,
+  "header_font_size": 1,
+  "number_font_size": 3,
+  "show_date": true
+}

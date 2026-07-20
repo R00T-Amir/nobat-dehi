@@ -1,14 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-نرم‌افزار نوبت‌دهی پیشرفته
-================================
-- رابط کاربری مدرن با پیش‌نمایش زنده فیش
-- چاپ دستی (تک‌تک) و چاپ خودکار در بازه مشخص
-- تنظیم سایز کاغذ (58mm / 80mm)
-- مدیریت تاریخ (تاریخ سیستم یا تاریخ دستی / حذف تاریخ)
-- ذخیره تنظیمات و وضعیت روزانه
-"""
-
 import json
 import os
 from datetime import date
@@ -28,27 +18,15 @@ STATE_FILE = os.path.join(BASE_DIR, "state.json")
 DEFAULT_CONFIG = {
     "header_text": "سیستم نوبت‌دهی",
     "printer_name": "Meva TP1000",
-    "start_number": 100,
+    "start_number": 1,
     "end_number": 999,
     "header_font_size": 1,
     "number_font_size": 3,
     "show_date": True,
-    "custom_date_text": "",  
-    "paper_width": 32,       
+    "custom_date_text": "",
+    "paper_width": 32,
     "auto_start": 1,
     "auto_end": 20,
-}
-
-# پالت رنگی مدرن
-COLORS = {
-    "bg": "#f0f4f8",
-    "card_bg": "#ffffff",
-    "primary": "#3b82f6",
-    "success": "#10b981",
-    "danger": "#ef4444",
-    "text_dark": "#1e293b",
-    "text_gray": "#64748b",
-    "border": "#e2e8f0"
 }
 
 def load_json(path, default):
@@ -141,101 +119,75 @@ class SettingsDialog(tk.Toplevel):
     def __init__(self, master, cfg: dict, on_save):
         super().__init__(master)
         self.title("تنظیمات سیستم")
-        self.geometry("480x720")
-        self.configure(bg=COLORS["bg"])
+        self.geometry("450x680")
         self.cfg = dict(cfg)
         self.on_save = on_save
         self.resizable(False, False)
-        self.grab_set()
 
-        main_frame = tk.Frame(self, bg=COLORS["bg"])
-        main_frame.pack(fill="both", expand=True, padx=15, pady=15)
-        self.create_widgets(main_frame)
+        pad = {"padx": 15, "pady": 6}
 
-    def create_widgets(self, frame):
-        pad = {"padx": 10, "pady": 5}
-        font_label = ("Tahoma", 10, "bold")
-        font_entry = ("Tahoma", 10)
-
-        # --- بخش سربرگ ---
-        tk.Label(frame, text="متن سربرگ (چند خط مجاز است):", bg=COLORS["bg"], font=font_label, fg=COLORS["text_dark"]).pack(anchor="e", **pad)
-        self.header_text = tk.Text(frame, height=3, font=font_entry, relief="solid", borderwidth=1, bg=COLORS["card_bg"])
+        tk.Label(self, text="متن سربرگ (چند خط مجاز است):", font=("Tahoma", 10, "bold")).pack(anchor="e", **pad)
+        self.header_text = tk.Text(self, height=4, font=("Tahoma", 11))
         self.header_text.insert("1.0", self.cfg.get("header_text", ""))
-        self.header_text.pack(fill="x", **pad)
+        self.header_text.pack(fill="x", padx=15)
 
-        # --- بازه شماره‌گذاری ---
-        range_frame = tk.LabelFrame(frame, text="بازه شماره‌گذاری", bg=COLORS["bg"], font=font_label, fg=COLORS["text_gray"], bd=1, relief="solid")
-        range_frame.pack(fill="x", **pad, pady=10)
-        
-        tk.Label(range_frame, text="شماره شروع:", bg=COLORS["bg"], font=font_entry).grid(row=0, column=1, sticky="e", padx=5, pady=5)
+        frame_range = tk.Frame(self)
+        frame_range.pack(fill="x", **pad)
+        tk.Label(frame_range, text="شماره شروع:", font=("Tahoma", 10)).grid(row=0, column=1, sticky="e", padx=5)
         self.start_var = tk.IntVar(value=self.cfg.get("start_number", 1))
-        tk.Entry(range_frame, textvariable=self.start_var, width=10, justify="center", font=font_entry).grid(row=0, column=0, padx=5)
+        tk.Entry(frame_range, textvariable=self.start_var, width=10, justify="center").grid(row=0, column=0, padx=5)
 
-        tk.Label(range_frame, text="شماره پایان:", bg=COLORS["bg"], font=font_entry).grid(row=1, column=1, sticky="e", padx=5, pady=5)
+        tk.Label(frame_range, text="شماره پایان:", font=("Tahoma", 10)).grid(row=1, column=1, sticky="e", padx=5, pady=5)
         self.end_var = tk.IntVar(value=self.cfg.get("end_number", 999))
-        tk.Entry(range_frame, textvariable=self.end_var, width=10, justify="center", font=font_entry).grid(row=1, column=0, padx=5)
+        tk.Entry(frame_range, textvariable=self.end_var, width=10, justify="center").grid(row=1, column=0, padx=5)
 
-        # --- چاپ خودکار ---
-        auto_frame = tk.LabelFrame(frame, text="بازه چاپ خودکار", bg=COLORS["bg"], font=font_label, fg=COLORS["text_gray"], bd=1, relief="solid")
-        auto_frame.pack(fill="x", **pad, pady=5)
-
-        tk.Label(auto_frame, text="از شماره:", bg=COLORS["bg"], font=font_entry).grid(row=0, column=1, sticky="e", padx=5, pady=5)
+        frame_auto = tk.Frame(self)
+        frame_auto.pack(fill="x", **pad)
+        tk.Label(frame_auto, text="شروع چاپ خودکار:", font=("Tahoma", 10)).grid(row=0, column=1, sticky="e", padx=5)
         self.auto_start_var = tk.IntVar(value=self.cfg.get("auto_start", 1))
-        tk.Entry(auto_frame, textvariable=self.auto_start_var, width=10, justify="center", font=font_entry).grid(row=0, column=0, padx=5)
+        tk.Entry(frame_auto, textvariable=self.auto_start_var, width=10, justify="center").grid(row=0, column=0, padx=5)
 
-        tk.Label(auto_frame, text="تا شماره:", bg=COLORS["bg"], font=font_entry).grid(row=1, column=1, sticky="e", padx=5, pady=5)
+        tk.Label(frame_auto, text="پایان چاپ خودکار:", font=("Tahoma", 10)).grid(row=1, column=1, sticky="e", padx=5, pady=5)
         self.auto_end_var = tk.IntVar(value=self.cfg.get("auto_end", 10))
-        tk.Entry(auto_frame, textvariable=self.auto_end_var, width=10, justify="center", font=font_entry).grid(row=1, column=0, padx=5)
+        tk.Entry(frame_auto, textvariable=self.auto_end_var, width=10, justify="center").grid(row=1, column=0, padx=5)
 
-        # --- سایز فونت و کاغذ ---
-        font_frame = tk.LabelFrame(frame, text="تنظیمات فونت و کاغذ", bg=COLORS["bg"], font=font_label, fg=COLORS["text_gray"], bd=1, relief="solid")
-        font_frame.pack(fill="x", **pad, pady=10)
-
-        tk.Label(font_frame, text="سایز فونت سربرگ (۰-۷):", bg=COLORS["bg"], font=font_entry).grid(row=0, column=1, sticky="e", padx=5, pady=5)
+        frame_font = tk.Frame(self)
+        frame_font.pack(fill="x", **pad)
+        tk.Label(frame_font, text="سایز فونت سربرگ (۰ تا ۷):", font=("Tahoma", 10)).grid(row=0, column=1, sticky="e", padx=5)
         self.header_size_var = tk.IntVar(value=self.cfg.get("header_font_size", 1))
-        tk.Spinbox(font_frame, from_=0, to=7, textvariable=self.header_size_var, width=8, justify="center", font=font_entry).grid(row=0, column=0, padx=5)
+        tk.Spinbox(frame_font, from_=0, to=7, textvariable=self.header_size_var, width=8, justify="center").grid(row=0, column=0, padx=5)
 
-        tk.Label(font_frame, text="سایز فونت شماره (۰-۷):", bg=COLORS["bg"], font=font_entry).grid(row=1, column=1, sticky="e", padx=5, pady=5)
+        tk.Label(frame_font, text="سایز فونت شماره (۰ تا ۷):", font=("Tahoma", 10)).grid(row=1, column=1, sticky="e", padx=5, pady=5)
         self.number_size_var = tk.IntVar(value=self.cfg.get("number_font_size", 3))
-        tk.Spinbox(font_frame, from_=0, to=7, textvariable=self.number_size_var, width=8, justify="center", font=font_entry).grid(row=1, column=0, padx=5)
+        tk.Spinbox(frame_font, from_=0, to=7, textvariable=self.number_size_var, width=8, justify="center").grid(row=1, column=0, padx=5)
 
-        tk.Label(font_frame, text="عرض کاغذ پرینتر:", bg=COLORS["bg"], font=font_entry).grid(row=2, column=1, sticky="e", padx=5, pady=5)
+        tk.Label(frame_font, text="عرض کاغذ (۳۲ یا ۴۸):", font=("Tahoma", 10)).grid(row=2, column=1, sticky="e", padx=5, pady=5)
         self.paper_var = tk.IntVar(value=self.cfg.get("paper_width", 32))
-        paper_options = [32, 48]
-        paper_menu = tk.OptionMenu(font_frame, self.paper_var, *paper_options)
-        paper_menu.config(font=font_entry, width=6)
-        paper_menu.grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        tk.Label(font_frame, text="(۳۲=58mm | ۴۸=80mm)", bg=COLORS["bg"], font=("Tahoma", 8), fg=COLORS["text_gray"]).grid(row=2, column=2, sticky="w", padx=5)
+        tk.Spinbox(frame_font, from_=32, to=48, increment=16, textvariable=self.paper_var, width=8, justify="center").grid(row=2, column=0, padx=5)
 
-        # --- تنظیمات تاریخ ---
-        date_frame = tk.LabelFrame(frame, text="تنظیمات تاریخ", bg=COLORS["bg"], font=font_label, fg=COLORS["text_gray"], bd=1, relief="solid")
-        date_frame.pack(fill="x", **pad, pady=5)
-
+        frame_date = tk.Frame(self)
+        frame_date.pack(fill="x", **pad)
         self.show_date_var = tk.BooleanVar(value=self.cfg.get("show_date", True))
-        tk.Checkbutton(date_frame, text="نمایش تاریخ در فیش", variable=self.show_date_var, bg=COLORS["bg"], font=font_entry).grid(row=0, column=0, columnspan=2, sticky="w", pady=5)
+        tk.Checkbutton(frame_date, text="نمایش تاریخ روی فیش", variable=self.show_date_var, font=("Tahoma", 10)).grid(row=0, column=0, columnspan=2, sticky="w", pady=5)
 
-        tk.Label(date_frame, text="تاریخ دلخواه (خالی=امروز):", bg=COLORS["bg"], font=font_entry).grid(row=1, column=0, sticky="e", padx=5, pady=5)
+        tk.Label(frame_date, text="تاریخ دلخواه (خالی=امروز):", font=("Tahoma", 10)).grid(row=1, column=1, sticky="e", padx=5)
         self.custom_date_var = tk.StringVar(value=self.cfg.get("custom_date_text", ""))
-        tk.Entry(date_frame, textvariable=self.custom_date_var, width=20, justify="center", font=font_entry).grid(row=1, column=1, padx=5)
+        tk.Entry(frame_date, textvariable=self.custom_date_var, width=15, justify="center").grid(row=1, column=0, padx=5)
 
-        # --- پرینتر ---
-        printer_frame = tk.LabelFrame(frame, text="تنظیمات پرینتر", bg=COLORS["bg"], font=font_label, fg=COLORS["text_gray"], bd=1, relief="solid")
-        printer_frame.pack(fill="x", **pad, pady=10)
-        
+        tk.Label(self, text="نام پرینتر (دقیقاً مطابق ویندوز):", font=("Tahoma", 10, "bold")).pack(anchor="e", **pad)
         self.printer_var = tk.StringVar(value=self.cfg.get("printer_name", "Meva TP1000"))
         printers = list_printers()
         if printers:
-            printer_menu = tk.OptionMenu(printer_frame, self.printer_var, *printers)
-            printer_menu.config(font=font_entry, width=35)
-            printer_menu.pack(padx=10, pady=10, fill="x")
+            printer_menu = tk.OptionMenu(self, self.printer_var, self.printer_var.get(), *printers)
+            printer_menu.config(font=("Tahoma", 10), width=40)
+            printer_menu.pack(fill="x", padx=15)
         else:
-            tk.Entry(printer_frame, textvariable=self.printer_var, justify="center", font=font_entry).pack(padx=10, pady=10, fill="x")
+            tk.Entry(self, textvariable=self.printer_var, justify="center").pack(fill="x", padx=15)
 
-        # --- دکمه‌ها ---
-        btn_frame = tk.Frame(frame, bg=COLORS["bg"])
+        btn_frame = tk.Frame(self)
         btn_frame.pack(pady=20)
-        tk.Button(btn_frame, text="ذخیره تنظیمات", font=("Tahoma", 11, "bold"), bg=COLORS["success"], fg="white", padx=30, pady=8, bd=0, command=self.save).pack(side="right", padx=10)
-        tk.Button(btn_frame, text="انصراف", font=("Tahoma", 11), bg=COLORS["text_gray"], fg="white", padx=30, pady=8, bd=0, command=self.destroy).pack(side="right")
+        tk.Button(btn_frame, text="ذخیره", font=("Tahoma", 11, "bold"), bg="#2e7d32", fg="white", padx=20, pady=8, command=self.save).pack(side="right", padx=10)
+        tk.Button(btn_frame, text="انصراف", font=("Tahoma", 11), padx=20, pady=8, command=self.destroy).pack(side="right")
 
     def save(self):
         try:
@@ -270,8 +222,8 @@ class NobatApp:
     def __init__(self, root):
         self.root = root
         self.root.title("نرم‌افزار نوبت‌دهی هوشمند")
-        self.root.geometry("500x620")
-        self.root.configure(bg=COLORS["bg"])
+        self.root.geometry("440x500")
+        self.root.configure(bg="#f4f4f4")
         
         self.is_auto_printing = False
 
@@ -293,73 +245,46 @@ class NobatApp:
         for w in self.root.winfo_children():
             w.destroy()
 
-        top_bar = tk.Frame(self.root, bg=COLORS["bg"])
-        top_bar.pack(fill="x", pady=(10,0), padx=15)
-        tk.Button(top_bar, text="⚙ تنظیمات", font=("Tahoma", 10, "bold"), bg=COLORS["text_gray"], fg="white", bd=0, padx=15, pady=5, command=self.open_settings).pack(side="right")
+        top_bar = tk.Frame(self.root, bg="#f4f4f4")
+        top_bar.pack(fill="x", pady=(10,0), padx=10)
+        tk.Button(top_bar, text="⚙ تنظیمات", font=("Tahoma", 10), command=self.open_settings).pack(side="left")
         
-        self.header_label = tk.Label(top_bar, text=self.cfg["header_text"], font=("Tahoma", 14, "bold"), bg=COLORS["bg"], fg=COLORS["text_dark"])
-        self.header_label.pack(side="right", padx=20)
+        self.header_label = tk.Label(top_bar, text=self.cfg["header_text"], font=("Tahoma", 16, "bold"), bg="#f4f4f4", justify="center")
+        self.header_label.pack(side="left", padx=20)
 
-        # --- پیش‌نمایش زنده فیش ---
-        preview_frame = tk.Frame(self.root, bg=COLORS["card_bg"], bd=1, relief="solid")
-        preview_frame.pack(pady=15, padx=40, fill="x")
+        self.number_label = tk.Label(
+            self.root, text=str(max(self.state["current_number"], self.cfg["start_number"])),
+            font=("Tahoma", 60, "bold"), bg="#f4f4f4", fg="#1a1a1a"
+        )
+        self.number_label.pack(pady=10)
+
+        self.range_label = tk.Label(
+            self.root, text=f"بازه دستی: {self.cfg['start_number']} تا {self.cfg['end_number']} | چاپ خودکار: {self.cfg['auto_start']} تا {self.cfg['auto_end']}",
+            font=("Tahoma", 9), bg="#f4f4f4", fg="#777"
+        )
+        self.range_label.pack()
+
+        self.status_label = tk.Label(self.root, text="آماده کار", font=("Tahoma", 10), bg="#f4f4f4", fg="#555")
+        self.status_label.pack(pady=(5, 0))
+
+        btn_frame = tk.Frame(self.root, bg="#f4f4f4")
+        btn_frame.pack(pady=10)
         
-        tk.Label(preview_frame, text="پیش‌نمایش فیش", font=("Tahoma", 9, "bold"), bg=COLORS["card_bg"], fg=COLORS["text_gray"]).pack(pady=(10,0))
-
-        prev_header_size = 10 + (self.cfg["header_font_size"] * 4)
-        prev_num_size = 24 + (self.cfg["number_font_size"] * 12)
+        self.btn_next = tk.Button(btn_frame, text="نوبت بعدی و چاپ", font=("Tahoma", 14, "bold"), bg="#2e7d32", fg="white", padx=20, pady=12, command=self.next_ticket)
+        self.btn_next.pack(side="left", padx=10)
         
-        self.prev_header = tk.Label(preview_frame, text=self.cfg["header_text"], font=("Tahoma", prev_header_size, "bold"), bg=COLORS["card_bg"], fg=COLORS["text_dark"], justify="center")
-        self.prev_header.pack(pady=(10,5))
-
-        width = self.cfg.get("paper_width", 32)
-        self.prev_dashes1 = tk.Label(preview_frame, text="-"*width, font=("Courier", 8), bg=COLORS["card_bg"], fg=COLORS["border"])
-        self.prev_dashes1.pack()
-
-        self.prev_number = tk.Label(preview_frame, text=str(max(self.state["current_number"], self.cfg["start_number"])), font=("Tahoma", prev_num_size, "bold"), bg=COLORS["card_bg"], fg=COLORS["primary"])
-        self.prev_number.pack(pady=10)
-
-        self.prev_dashes2 = tk.Label(preview_frame, text="-"*width, font=("Courier", 8), bg=COLORS["card_bg"], fg=COLORS["border"])
-        self.prev_dashes2.pack()
-        
-        if self.cfg.get("show_date", True):
-            date_txt = self.cfg.get("custom_date_text", "").strip() or date.today().strftime("%Y-%m-%d")
-            self.prev_date = tk.Label(preview_frame, text=date_txt, font=("Tahoma", 10), bg=COLORS["card_bg"], fg=COLORS["text_gray"])
-            self.prev_date.pack(pady=(5, 15))
-        else:
-            self.prev_date = tk.Label(preview_frame, text="", bg=COLORS["card_bg"])
-            self.prev_date.pack(pady=(0, 15))
-
-        # --- بخش چاپ خودکار ---
-        auto_frame = tk.Frame(self.root, bg=COLORS["bg"])
-        auto_frame.pack(fill="x", padx=20, pady=5)
-        
-        auto_info = f"چاپ خودکار: از {self.cfg['auto_start']} تا {self.cfg['auto_end']}"
-        tk.Label(auto_frame, text=auto_info, font=("Tahoma", 10), bg=COLORS["bg"], fg=COLORS["text_dark"]).pack(side="right")
-        
-        self.btn_auto = tk.Button(auto_frame, text="▶ شروع چاپ خودکار", font=("Tahoma", 9, "bold"), bg=COLORS["primary"], fg="white", bd=0, padx=10, pady=5, command=self.toggle_auto_print)
+        self.btn_auto = tk.Button(btn_frame, text="▶ چاپ خودکار", font=("Tahoma", 12, "bold"), bg="#3b82f6", fg="white", padx=15, pady=12, command=self.toggle_auto_print)
         self.btn_auto.pack(side="left")
 
-        # --- دکمه‌های اصلی ---
-        btn_frame = tk.Frame(self.root, bg=COLORS["bg"])
-        btn_frame.pack(pady=15)
-        
-        self.btn_next = tk.Button(btn_frame, text="نوبت بعدی و چاپ", font=("Tahoma", 13, "bold"), bg=COLORS["success"], fg="white", padx=40, pady=12, bd=0, command=self.next_ticket)
-        self.btn_next.pack()
-
-        self.status_label = tk.Label(self.root, text="سیستم آماده کار", font=("Tahoma", 10), bg=COLORS["bg"], fg=COLORS["text_gray"])
-        self.status_label.pack(pady=(5, 10))
-        
-        tk.Button(self.root, text="شروع مجدد از عدد اول بازه", font=("Tahoma", 9), bg=COLORS["bg"], fg=COLORS["danger"], bd=0, command=self.reset_sequence).pack()
+        tk.Button(self.root, text="شروع مجدد از عدد اول بازه", font=("Tahoma", 9), fg="#a33", bg="#f4f4f4", command=self.reset_sequence).pack()
 
     def update_preview_number(self, num):
-        self.prev_number.config(text=str(num))
+        self.number_label.config(text=str(num))
 
     def open_settings(self):
         SettingsDialog(self.root, self.cfg, self.on_settings_saved)
 
     def on_settings_saved(self, new_cfg):
-        # رفع باگ: اگر شماره شروع تغییر کرد، یا شماره فعلی خارج از بازه جدید بود، ریست شود
         if new_cfg["start_number"] != self.cfg.get("start_number"):
             self.state["current_number"] = new_cfg["start_number"] - 1
             save_json(STATE_FILE, self.state)
@@ -375,26 +300,25 @@ class NobatApp:
             self.state["current_number"] = self.cfg["start_number"] - 1
             save_json(STATE_FILE, self.state)
             self.update_preview_number(self.cfg["start_number"])
-            self.status_label.config(text="بازه ریست شد", fg=COLORS["primary"])
+            self.status_label.config(text="بازه ریست شد", fg="#3b82f6")
 
     def toggle_auto_print(self):
         if self.is_auto_printing:
             self.is_auto_printing = False
-            self.btn_auto.config(text="▶ شروع چاپ خودکار", bg=COLORS["primary"])
+            self.btn_auto.config(text="▶ چاپ خودکار", bg="#3b82f6")
             self.btn_next.config(state="normal")
-            self.status_label.config(text="چاپ خودکار متوقف شد", fg=COLORS["danger"])
+            self.status_label.config(text="چاپ خودکار متوقف شد", fg="#ef4444")
         else:
             curr = self.state["current_number"]
-            # اگر شماره فعلی خارج از بازه چاپ خودکار بود، آن را روی شروع چاپ خودکار تنظیم کن
             if curr < self.cfg["auto_start"] - 1 or curr > self.cfg["auto_end"]:
                 self.state["current_number"] = self.cfg["auto_start"] - 1
                 save_json(STATE_FILE, self.state)
                 self.update_preview_number(self.cfg["auto_start"])
             
             self.is_auto_printing = True
-            self.btn_auto.config(text="⏸ توقف چاپ خودکار", bg=COLORS["danger"])
+            self.btn_auto.config(text="⏸ توقف", bg="#ef4444")
             self.btn_next.config(state="disabled")
-            self.status_label.config(text="در حال چاپ خودکار...", fg=COLORS["primary"])
+            self.status_label.config(text="در حال چاپ خودکار...", fg="#3b82f6")
             self.root.after(500, self.auto_print_step)
 
     def auto_print_step(self):
@@ -404,9 +328,9 @@ class NobatApp:
         curr = self.state["current_number"]
         if curr >= self.cfg["auto_end"]:
             self.is_auto_printing = False
-            self.btn_auto.config(text="▶ شروع چاپ خودکار", bg=COLORS["primary"])
+            self.btn_auto.config(text="▶ چاپ خودکار", bg="#3b82f6")
             self.btn_next.config(state="normal")
-            self.status_label.config(text="چاپ خودکار به پایان رسید", fg=COLORS["success"])
+            self.status_label.config(text="چاپ خودکار به پایان رسید", fg="#2e7d32")
             return
 
         next_num = curr + 1
@@ -416,13 +340,13 @@ class NobatApp:
         
         ok = print_ticket(next_num, self.cfg)
         if ok:
-            self.status_label.config(text=f"چاپ شد: {next_num}", fg=COLORS["success"])
+            self.status_label.config(text=f"چاپ شد: {next_num}", fg="#2e7d32")
             self.root.after(1000, self.auto_print_step)
         else:
             self.is_auto_printing = False
-            self.btn_auto.config(text="▶ شروع چاپ خودکار", bg=COLORS["primary"])
+            self.btn_auto.config(text="▶ چاپ خودکار", bg="#3b82f6")
             self.btn_next.config(state="normal")
-            self.status_label.config(text="خطا در چاپ خودکار!", fg=COLORS["danger"])
+            self.status_label.config(text="خطا در چاپ خودکار!", fg="#ef4444")
 
     def next_ticket(self):
         next_num = self.state["current_number"] + 1
@@ -438,9 +362,9 @@ class NobatApp:
 
         ok = print_ticket(next_num, self.cfg)
         if ok:
-            self.status_label.config(text=f"نوبت {next_num} چاپ شد", fg=COLORS["success"])
+            self.status_label.config(text=f"نوبت {next_num} چاپ شد", fg="#2e7d32")
         else:
-            self.status_label.config(text=f"نوبت {next_num} ثبت شد ولی چاپ نشد", fg=COLORS["danger"])
+            self.status_label.config(text=f"نوبت {next_num} ثبت شد ولی چاپ نشد", fg="#ef4444")
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -77,9 +77,9 @@ def build_escpos_bytes(number: int, cfg: dict) -> bytes:
     data += GS + b"!" + b"\x00"             
     
     # خط تیره اول
-    data += ESC + b"a" + b"\x00"            
+    data += ESC + b"a" + b"\x00"            # چپ‌چین برای خط تیره
     data += dashes.encode("cp1256", errors="ignore")
-    data += ESC + b"a" + b"\x01"            
+    data += ESC + b"a" + b"\x01"            # بازگشت به وسط‌چین برای شماره
 
     # شماره نوبت
     data += GS + b"!" + font_size_byte(cfg["number_font_size"])
@@ -87,24 +87,28 @@ def build_escpos_bytes(number: int, cfg: dict) -> bytes:
     data += GS + b"!" + b"\x00"
 
     # خط تیره دوم
-    data += ESC + b"a" + b"\x00"
+    data += ESC + b"a" + b"\x00"            # چپ‌چین برای خط تیره
     data += dashes.encode("cp1256", errors="ignore")
     
-    # تاریخ
+    # تاریخ (اصلاح وسط‌چین بودن)
     if cfg.get("show_date", True):
+        data += ESC + b"a" + b"\x01"  # ----> بازگشت به وسط‌چین برای تاریخ
         if cfg.get("custom_date_text", "").strip():
             date_str = cfg["custom_date_text"]
         else:
             date_str = date.today().strftime("%Y-%m-%d")
         data += (date_str + "\n").encode("cp1256", errors="ignore")
 
-    # مدیریت طول کاغذ (فاصله پایین)
+    # مدیریت طول کاغذ (فاصله پایین و برش)
     if cfg.get("ticket_mode", "normal") == "compact":
-        data += b"\n" # فاصله کم در حالت فشرده
+        # حذف کامل خطوط خالی و کاهش فاصله برش به ۵ واحد (حداقل ممکن)
+        data += b"\n" 
+        data += GS + b"V" + b"\x41" + b"\x05"   # برش با حداقل فاصله
     else:
-        data += b"\n\n\n" # فاصله معمولی
-
-    data += GS + b"V" + b"\x41" + b"\x10"   # برش کاغذ
+        # حالت عادی با فاصله استاندارد
+        data += b"\n\n\n"
+        data += GS + b"V" + b"\x41" + b"\x10"   # برش با فاصله معمولی
+        
     return data
 
 def print_ticket(number: int, cfg: dict) -> bool:
@@ -138,13 +142,11 @@ class SettingsDialog(tk.Toplevel):
 
         pad = {"padx": 15, "pady": 6}
 
-        # --- بخش سربرگ ---
         tk.Label(self, text="متن سربرگ (چند خط مجاز است):", font=("Tahoma", 10, "bold")).pack(anchor="e", **pad)
         self.header_text = tk.Text(self, height=4, font=("Tahoma", 11))
         self.header_text.insert("1.0", self.cfg.get("header_text", ""))
         self.header_text.pack(fill="x", padx=15)
 
-        # --- بازه شماره‌گذاری ---
         frame_range = tk.Frame(self)
         frame_range.pack(fill="x", **pad)
         tk.Label(frame_range, text="شماره شروع:", font=("Tahoma", 10)).grid(row=0, column=1, sticky="e", padx=5)
@@ -155,7 +157,6 @@ class SettingsDialog(tk.Toplevel):
         self.end_var = tk.IntVar(value=self.cfg.get("end_number", 999))
         tk.Entry(frame_range, textvariable=self.end_var, width=10, justify="center").grid(row=1, column=0, padx=5)
 
-        # --- بازه چاپ خودکار ---
         frame_auto = tk.Frame(self)
         frame_auto.pack(fill="x", **pad)
         tk.Label(frame_auto, text="شروع چاپ خودکار:", font=("Tahoma", 10)).grid(row=0, column=1, sticky="e", padx=5)
@@ -166,7 +167,6 @@ class SettingsDialog(tk.Toplevel):
         self.auto_end_var = tk.IntVar(value=self.cfg.get("auto_end", 10))
         tk.Entry(frame_auto, textvariable=self.auto_end_var, width=10, justify="center").grid(row=1, column=0, padx=5)
 
-        # --- سایز فونت و ابعاد کاغذ ---
         frame_font = tk.Frame(self)
         frame_font.pack(fill="x", **pad)
         tk.Label(frame_font, text="سایز فونت سربرگ (۰ تا ۷):", font=("Tahoma", 10)).grid(row=0, column=1, sticky="e", padx=5)
@@ -181,7 +181,6 @@ class SettingsDialog(tk.Toplevel):
         self.paper_var = tk.IntVar(value=self.cfg.get("paper_width", 32))
         tk.Spinbox(frame_font, from_=32, to=48, increment=16, textvariable=self.paper_var, width=8, justify="center").grid(row=2, column=0, padx=5)
 
-        # تنظیمات طول کاغذ (جدید)
         tk.Label(frame_font, text="حالت چاپ (طول):", font=("Tahoma", 10)).grid(row=3, column=1, sticky="e", padx=5, pady=5)
         self.ticket_mode_var = tk.StringVar(value=self.cfg.get("ticket_mode", "normal"))
         mode_menu = tk.OptionMenu(frame_font, self.ticket_mode_var, "normal", "compact")
@@ -189,7 +188,6 @@ class SettingsDialog(tk.Toplevel):
         mode_menu.grid(row=3, column=0, padx=5, sticky="w")
         tk.Label(frame_font, text="(کوچک=کمترین فاصله)", font=("Tahoma", 8), fg="#777").grid(row=3, column=2, sticky="w", padx=5)
 
-        # --- تنظیمات تاریخ ---
         frame_date = tk.Frame(self)
         frame_date.pack(fill="x", **pad)
         self.show_date_var = tk.BooleanVar(value=self.cfg.get("show_date", True))
@@ -199,7 +197,6 @@ class SettingsDialog(tk.Toplevel):
         self.custom_date_var = tk.StringVar(value=self.cfg.get("custom_date_text", ""))
         tk.Entry(frame_date, textvariable=self.custom_date_var, width=15, justify="center").grid(row=1, column=0, padx=5)
 
-        # --- پرینتر ---
         tk.Label(self, text="نام پرینتر (دقیقاً مطابق ویندوز):", font=("Tahoma", 10, "bold")).pack(anchor="e", **pad)
         self.printer_var = tk.StringVar(value=self.cfg.get("printer_name", "Meva TP1000"))
         printers = list_printers()
@@ -210,7 +207,6 @@ class SettingsDialog(tk.Toplevel):
         else:
             tk.Entry(self, textvariable=self.printer_var, justify="center").pack(fill="x", padx=15)
 
-        # --- دکمه‌ها ---
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=20)
         tk.Button(btn_frame, text="ذخیره", font=("Tahoma", 11, "bold"), bg="#2e7d32", fg="white", padx=20, pady=8, command=self.save).pack(side="right", padx=10)

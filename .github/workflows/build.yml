@@ -1,0 +1,45 @@
+name: Build EXE
+
+# این ورک‌فلو به‌صورت خودکار روی هر push به شاخه‌ی main اجرا می‌شود
+# و همچنین می‌توانید از تب Actions در گیت‌هاب به‌صورت دستی هم اجرایش کنید.
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: دریافت کد از ریپازیتوری
+        uses: actions/checkout@v4
+
+      - name: نصب پایتون
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: نصب وابستگی‌ها
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: ساخت فایل exe
+        run: |
+          pyinstaller --onefile --windowed --name NobatDehi app.py
+
+      - name: آپلود فایل exe به‌عنوان Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NobatDehi-Windows
+          path: dist/NobatDehi.exe
+
+      # اگر می‌خواهید هر بار که یک "تگ نسخه" (مثلاً v1.0.0) بسازید،
+      # یک Release رسمی هم به‌همراه فایل exe ساخته شود، این بخش را فعال کنید:
+      # - name: انتشار Release (فقط روی تگ)
+      #   if: startsWith(github.ref, 'refs/tags/')
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     files: dist/NobatDehi.exe

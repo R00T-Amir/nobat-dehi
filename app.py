@@ -6,7 +6,7 @@
 - چاپ دستی (تک‌تک) و چاپ خودکار در بازه مشخص
 - تنظیم سایز کاغذ (58mm / 80mm)
 - مدیریت تاریخ (تاریخ سیستم یا تاریخ دستی / حذف تاریخ)
-- ذخیره تنظیمات و状态 روزانه
+- ذخیره تنظیمات و وضعیت روزانه
 """
 
 import json
@@ -146,29 +146,18 @@ class SettingsDialog(tk.Toplevel):
     def __init__(self, master, cfg: dict, on_save):
         super().__init__(master)
         self.title("تنظیمات سیستم")
-        self.geometry("500x650")
+        self.geometry("500x720")
         self.configure(bg=COLORS["bg"])
         self.cfg = dict(cfg)
         self.on_save = on_save
         self.resizable(False, False)
         self.grab_set()
 
-        # اسکرول فریم ساده
-        canvas = tk.Canvas(self, bg=COLORS["bg"], highlightthickness=0)
-        canvas.pack(side="left", fill="both", expand=True)
-        scroll_y = tk.Scrollbar(self, orient="vertical", command=canvas.yview)
-        scroll_y.pack(side="right", fill="y")
-        canvas.configure(yscrollcommand=scroll_y.set)
+        # فریم اصلی بدون استفاده از Canvas برای جلوگیری از باگ نمایش
+        main_frame = tk.Frame(self, bg=COLORS["bg"])
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
-        frame = tk.Frame(canvas, bg=COLORS["bg"])
-        canvas.create_window((0,0), window=frame, anchor="nw")
-        
-        # ساخت ویجت‌ها
-        self.create_widgets(frame)
-        
-        frame.update_idletasks()
-        canvas.config(scrollregion=canvas.bbox("all"))
-        canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        self.create_widgets(main_frame)
 
     def create_widgets(self, frame):
         pad = {"padx": 20, "pady": 5}

@@ -452,6 +452,5 @@ class NobatApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.tk.call("source", "") # برای راست‌چین بودن پیش‌فرض در برخی ویندوزها
     app = NobatApp(root)
     root.mainloop()
